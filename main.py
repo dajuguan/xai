@@ -17,7 +17,7 @@ def updateNodeRoutine(config: Config):
         if config.updateLocalVersion():
             p.kill()  
             start()
-            config.sendmail(title=f"Sentry SOFTWARE UPDATED to ${config.version}.", content="Last version is:{lastVersion}.")
+            config.sendmail(title=f"Sentry SOFTWARE UPDATED to {config.version}.", content=f"Last version was:{lastVersion}.")
 
     
 updateNodeRoutine(config)
