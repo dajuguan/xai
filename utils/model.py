@@ -6,6 +6,12 @@ import time
 import requests
 import smtplib, ssl
 
+from enum import Enum
+class State(Enum):
+    Updating = 0
+    Updated = 1
+
+
 @dataclass
 class Config:
     prv_key: str
@@ -15,6 +21,7 @@ class Config:
     version: str
     env_path: str
     github_token: str | None
+    state: int  # 0, updated; 1: updating
 
     # initialize config and update local version on start
     def __init__(self, env_path=".env"): 
@@ -27,6 +34,7 @@ class Config:
             self.version = conf["version"]
             self.github_token = conf["github_token"]
             self.env_path = env_path
+            self.state = 0
 
             self.updateLocalVersion()
     def _toJSON(self) -> str:
@@ -50,11 +58,14 @@ class Config:
         return tag
     def updateLocalVersion(self) -> bool:
         tag = self._checkLatestReleaseTag()
-        if self.version != tag:
+        if (self.version != tag) and (self.state == 0):
             print(f"latest version is: {tag}, updating......................")
-            os.system(f"curl -L -o sentry-node-cli-linux.zip https://github.com/xai-foundation/sentry/releases/latest/download/sentry-node-cli-linux.zip")
-            os.system(f"unzip -o sentry-node-cli-linux.zip")
+            self.state = 1
+            os.system(f"curl -L -o sentry-node-cli-linux.{tag}.zip https://github.com/xai-foundation/sentry/releases/latest/download/sentry-node-cli-linux.zip")
+            os.system(f"unzip -p sentry-node-cli-linux.{tag}.zip > sentry-node-cli-linux.{tag}")
+            os.system(f"chmod +x sentry-node-cli-linux.{tag}")
             self.version = tag
+            self.state = 0
             self.dump()
             return True
         return False
@@ -76,18 +87,18 @@ class Config:
             server.sendmail(sender_email, receiver_email, message)
     def start_node(self):
         try:
-            proc = subprocess.Popen("./sentry-node-cli-linux", stdin=subprocess.PIPE, text=True)
+            proc = subprocess.Popen(f"./sentry-node-cli-linux.{self.version}", stdin=subprocess.PIPE, text=True)
             # -----------------boot-operator-------------------------#
             proc.stdin.write('boot-operator\n')
             proc.stdin.write(self.prv_key+"\n")
             proc.stdin.flush()
             time.sleep(0.5)
             # -----------------provision select------------------------------#
-            proc.stdin.write('y\n')
+            proc.stdin.write('N\n')
             proc.stdin.flush()
             time.sleep(0.5)
-            proc.stdin.write(' \n\n')
-            proc.stdin.flush()
+            # proc.stdin.write(' \n\n')  # Don't select the opearator for owner!
+            # proc.stdin.flush()
             print("running sentry node with version======>:", self.version)
             returncode = proc.wait()
             raise subprocess.CalledProcessError(returncode, cmd="sentry-node-cli-linux",stderr=proc.stderr)
