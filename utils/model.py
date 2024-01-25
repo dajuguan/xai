@@ -85,7 +85,7 @@ class Config:
             server.ehlo()  # Can be omitted
             server.login(sender_email, password)
             server.sendmail(sender_email, receiver_email, message)
-    def start_node(self):
+    def start_node(self, restart=False):
         try:
             proc = subprocess.Popen(f"./sentry-node-cli-linux.{self.version}", stdin=subprocess.PIPE, text=True)
             # -----------------boot-operator-------------------------#
@@ -100,9 +100,17 @@ class Config:
             # proc.stdin.write(' \n\n')  # Don't select the opearator for owner!
             # proc.stdin.flush()
             print("running sentry node with version======>:", self.version)
+            if restart:
+                time.sleep(120)
+                if proc.poll() == None:
+                    self.sendmail(title="Sentry node restart successfully", content="Restarted!")
+                else:
+                    print("Restarting Sentry node again...................")
             returncode = proc.wait()
             raise subprocess.CalledProcessError(returncode, cmd="sentry-node-cli-linux",stderr=proc.stderr)
 
-        except Exception as e:
-            self.sendmail(title="Sentry node is down", content="Please restart it on server!")
+        except Exception as e:  # p.kill will not trigger this, because the process is already dead
             print("node exit==============>",e)
+            self.sendmail(title="Sentry node is down", content="Restarting!")
+            time.sleep(60)
+            self.start_node(True)

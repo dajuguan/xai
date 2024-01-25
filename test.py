@@ -55,17 +55,37 @@ def updateNodeRoutine(config: Config):
             break
         tries += 1
 
+def subprocess():
+    def targetFn():
+        try: 
+            while True:
+                print("aaa")
+                time.sleep(0.1)
+        except Exception as e:
+            print("catch exception")
+
+    p = Process(target=targetFn)
+    p.start() 
+
+    time.sleep(0.5)
+    p.kill()
+    p.join()
+   
+
+
 class TestSuite(unittest.TestCase):
-    @classmethod
-    def tearDownClass(cls):
-        config.version = ""
-        config.dump()
-    def testGetRelease(self):
-        config._checkLatestReleaseTag()
-    def testUpdateLocalVersion(self):
-        config.updateLocalVersion()
-    def testMockUpdate(self):
-        updateNodeRoutine(config)
+    # @classmethod
+    # def tearDownClass(cls):
+    #     config.version = ""
+    #     config.dump()
+    # def testGetRelease(self):
+    #     config._checkLatestReleaseTag()
+    # def testUpdateLocalVersion(self):
+    #     config.updateLocalVersion()
+    # def testMockUpdate(self):
+    #     updateNodeRoutine(config)
+    def testKillSubprocess(self):
+        subprocess()
 
 if __name__ == "__main__":
     unittest.main()

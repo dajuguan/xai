@@ -12,7 +12,7 @@ def updateNodeRoutine(config: Config):
         return p
     p = start()
     while True:
-        time.sleep(90)  # update every 30 seconds
+        time.sleep(90)  # update every 90 seconds
         lastVersion = config.version
         if config.updateLocalVersion():
             p.kill()  
